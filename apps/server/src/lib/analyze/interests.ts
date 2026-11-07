@@ -14,9 +14,9 @@
  * Reuse or distribution of this file requires a license from Zero Email Inc.
  */
 
-import { env } from 'cloudflare:workers';
 import { miniModel } from '../ai-models';
 import { generateObject } from 'ai';
+import { env } from '../../env';
 import { z } from 'zod';
 
 export interface GenerateTopicsOptions {

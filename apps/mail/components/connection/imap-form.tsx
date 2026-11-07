@@ -3,7 +3,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
 import { useTRPC } from '@/providers/query-provider';
 import type { ImapPreset } from './imap-presets';
-import { OutlookColor } from '../icons/icons';
 import { m } from '@/paraglide/messages';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
@@ -35,9 +34,6 @@ const emptyServer = (host: string, port: number, security: Security): ServerFiel
   security,
   username: '',
 });
-
-const oauthStartUrl = (provider: string, email: string) =>
-  `${import.meta.env.VITE_PUBLIC_BACKEND_URL}/api/imap-oauth/${provider}/start?email=${encodeURIComponent(email)}`;
 
 function ServerSection({
   title,
@@ -281,20 +277,6 @@ export function ImapConnectionForm({
       }}
     >
       <p className="text-muted-foreground text-sm">{email}</p>
-
-      {hint?.oauthProvider === 'microsoft' && (
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full gap-2"
-          onClick={() => {
-            window.location.href = oauthStartUrl('microsoft', email);
-          }}
-        >
-          <OutlookColor className="size-4" />
-          {m['pages.settings.connections.imap.signInWith']({ provider: 'Microsoft' })}
-        </Button>
-      )}
 
       {hint?.note && (
         <p className="text-muted-foreground rounded-md border p-2 text-xs">

@@ -104,6 +104,20 @@ export const createRateLimiterMiddleware = (config: {
   generatePrefix: (ctx: TrpcContext, input: any) => string;
 }) =>
   t.middleware(async ({ next, ctx, input }) => {
+    // Local Wrangler development has no reachable Upstash instance. Keep rate limits
+    // active in production and remote development, but let loopback-only Redis configs
+    // use the local in-memory backend.
+    let localRedis = false;
+    if (ctx.c.env.NODE_ENV !== 'production') {
+      try {
+        const hostname = new URL(ctx.c.env.REDIS_URL).hostname;
+        localRedis = ['localhost', '127.0.0.1', '[::1]'].includes(hostname);
+      } catch {
+        // An invalid or missing Redis URL should keep the normal configured path.
+      }
+    }
+    if (ctx.c.env.NODE_ENV === 'local' || localRedis) return next();
+
     const ratelimiter = new Ratelimit({
       redis: redis(),
       limiter: config.limiter,

@@ -158,6 +158,7 @@ export async function assistantTools(): Promise<CloudTool[]> {
           ? {
               requiredScopes: ['mail:request_action'],
               approval: 'ask',
+              // @ts-expect-error Keiki runtime supports this approval extension; the installed SDK types lag.
               approvalProof: 'verified',
               approvalFallback: 'tool',
               preflight: true,
@@ -195,7 +196,7 @@ export async function configureAssistant() {
     externalRef: 'zero-shared-gateway',
     agent: {
       name: 'Zero Shared Gateway',
-      model: env.KEIKI_MODEL || 'openai/gpt-4.1',
+      model: env.KEIKI_MODEL || 'openrouter/free',
       max_steps: 10,
       history_limit: 40,
       features: { imessageApps: true },

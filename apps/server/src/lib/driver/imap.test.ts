@@ -507,7 +507,7 @@ describe('ImapMailManager', () => {
       {
         auth: {
           userId: 'u1',
-          email: 'me@outlook.com',
+          email: 'me@gmail.com',
           accessToken: 'stale',
           refreshToken: 'imap:managed',
         },
@@ -515,19 +515,19 @@ describe('ImapMailManager', () => {
         imap: {
           connectionId: 'conn-2',
           imap: {
-            host: 'outlook.office365.com',
+            host: 'imap.gmail.com',
             port: 993,
             security: 'tls',
-            username: 'me@outlook.com',
+            username: 'me@gmail.com',
           },
           smtp: {
-            host: 'smtp.office365.com',
-            port: 587,
-            security: 'starttls',
-            username: 'me@outlook.com',
+            host: 'smtp.gmail.com',
+            port: 465,
+            security: 'tls',
+            username: 'me@gmail.com',
           },
           authMethod: 'xoauth2',
-          oauthProvider: 'microsoft',
+          oauthProvider: 'google',
           secret: await cipher.encrypt('rt-1', 'conn-2'),
           accessToken: 'stale',
           serverSavesSent: true,
@@ -540,7 +540,7 @@ describe('ImapMailManager', () => {
         socketFactory: imap.factory,
         cipher,
         blobs: { get: async () => null, put: async () => {} },
-        oauthClients: { microsoft: { clientId: 'cid', clientSecret: 'cs' } },
+        oauthClients: { google: { clientId: 'cid', clientSecret: 'cs' } },
         fetcher,
       },
     );

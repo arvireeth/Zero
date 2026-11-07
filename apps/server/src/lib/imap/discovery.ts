@@ -23,7 +23,7 @@ export interface DiscoveredSettings {
   note?: string;
   helpUrl?: string;
   /** Provider supports (and prefers) OAuth via XOAUTH2. */
-  oauthProvider?: 'google' | 'microsoft';
+  oauthProvider?: 'google';
 }
 
 interface Preset extends Omit<DiscoveredSettings, 'source'> {
@@ -103,17 +103,6 @@ const PRESETS: Preset[] = [
     oauthProvider: 'google',
     note: 'Gmail works best with the Google connection. For IMAP, use an app password.',
     helpUrl: 'https://support.google.com/accounts/answer/185833',
-  },
-  {
-    provider: 'Outlook',
-    domains: ['outlook.com', 'hotmail.com', 'live.com', 'msn.com', 'outlook.de', 'hotmail.co.uk'],
-    mx: /\.(protection\.outlook\.com|olc\.protection\.outlook\.com)$/i,
-    imap: { host: 'outlook.office365.com', port: 993, security: 'tls' },
-    smtp: { host: 'smtp.office365.com', port: 587, security: 'starttls' },
-    username: 'email',
-    serverSavesSent: true,
-    oauthProvider: 'microsoft',
-    note: 'Microsoft accounts require signing in with Microsoft.',
   },
 ];
 

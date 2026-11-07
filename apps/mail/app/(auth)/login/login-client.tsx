@@ -4,8 +4,8 @@ import { Suspense, useEffect, useState, type ReactNode } from 'react';
 import { PixelatedBackground } from '@/components/home/pixelated-bg';
 import type { EnvVarInfo } from '@zero/server/auth-providers';
 import { assistantReturnTo } from '@/lib/assistant-return-to';
-import { Google, Microsoft } from '@/components/icons/icons';
 import ErrorMessage from '@/app/(auth)/login/error-message';
+import { Google } from '@/components/icons/icons';
 import { Link, useNavigate } from 'react-router';
 import { Button } from '@/components/ui/button';
 import { signIn } from '@/lib/auth-client';
@@ -42,9 +42,6 @@ const getProviderIcon = (providerId: string, className?: string): ReactNode => {
   switch (providerId) {
     case 'google':
       return <Google className={defaultClass} />;
-
-    case 'microsoft':
-      return <Microsoft className={defaultClass} />;
 
     case 'zero':
       return (
@@ -139,7 +136,7 @@ function LoginClientContent({ providers, isProd }: LoginClientProps) {
   return (
     <main className="relative flex min-h-screen w-full flex-col overflow-hidden bg-[#0F0F0F] text-white">
       <PixelatedBackground
-        className="pointer-events-none absolute top-[-40px] left-1/2 z-0 h-auto w-screen min-w-[1920px] -translate-x-1/2 object-cover"
+        className="pointer-events-none absolute left-1/2 top-[-40px] z-0 h-auto w-screen min-w-[1920px] -translate-x-1/2 object-cover"
         style={{
           mixBlendMode: 'screen',
           maskImage: 'linear-gradient(to bottom, black, transparent)',
@@ -239,7 +236,7 @@ function LoginClientContent({ providers, isProd }: LoginClientProps) {
                             {provider.envVarStatus.map((envVar) => (
                               <div key={envVar.name} className="flex items-start">
                                 <div
-                                  className={`mt-1.5 mr-2 h-2 w-2 rounded-full ${!envVar.set ? 'bg-red-500' : 'bg-green-500'}`}
+                                  className={`mr-2 mt-1.5 h-2 w-2 rounded-full ${!envVar.set ? 'bg-red-500' : 'bg-green-500'}`}
                                 />
                                 <div className="flex-1">
                                   <div className="flex items-center">

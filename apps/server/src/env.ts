@@ -75,11 +75,14 @@ export type ZeroEnv = {
   TWILIO_PHONE_NUMBER: string;
   VITE_PUBLIC_ELEVENLABS_AGENT_ID: string;
   REACT_SCAN: string;
-  MICROSOFT_CLIENT_ID: string;
-  MICROSOFT_CLIENT_SECRET: string;
   VOICE_SECRET: string;
   ARCADE_API_KEY: string;
   OPENROUTER_API_KEY: string;
+  /** Paid inference is blocked unless this is explicitly set to "true". */
+  ALLOW_PAID_AI?: string;
+  /** Enable the optional free-tier Gemini fallback only by explicit opt-in. */
+  ALLOW_GEMINI_FALLBACK?: string;
+  GEMINI_FALLBACK_MODEL?: string;
   OPENROUTER_MODEL?: string;
   OPENROUTER_MINI_MODEL?: string;
   CONTEXT_DEV_API_KEY: string;

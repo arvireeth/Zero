@@ -159,8 +159,35 @@ const connectionHandlerHook = async (account: Account) => {
   }
 };
 
+// Local development intentionally works without an Upstash account. The sample
+// .dev.vars points at a local REST emulator, which is not running by default.
+// Better Auth needs secondary storage while creating sessions, so keep local
+// sessions in this isolate instead of making sign-in depend on that emulator.
+const localAuthSecondaryStorage = new Map<string, { value: string; expiresAt?: number }>();
+let warnedAboutLocalAuthStorage = false;
+
+const createLocalAuthSecondaryStorage = () => ({
+  get: async (key: string) => {
+    const entry = localAuthSecondaryStorage.get(key);
+    if (!entry) return null;
+    if (entry.expiresAt !== undefined && entry.expiresAt <= Date.now()) {
+      localAuthSecondaryStorage.delete(key);
+      return null;
+    }
+    return entry.value;
+  },
+  set: async (key: string, value: string, ttl?: number) => {
+    localAuthSecondaryStorage.set(key, {
+      value,
+      ...(ttl ? { expiresAt: Date.now() + ttl * 1000 } : {}),
+    });
+  },
+  delete: async (key: string) => {
+    localAuthSecondaryStorage.delete(key);
+  },
+});
+
 export const createAuth = () => {
-  const twilioClient = twilio();
   const dub = new Dub();
 
   return betterAuth({
@@ -175,6 +202,9 @@ export const createAuth = () => {
       bearer(),
       phoneNumber({
         sendOTP: async ({ code, phoneNumber }) => {
+          // Phone verification is optional for local development and OAuth sign-in.
+          // Initialize the SMS provider only when an OTP is actually requested.
+          const twilioClient = twilio();
           await twilioClient.messages
             .send(phoneNumber, `Your verification code is: ${code}, do not share it with anyone.`)
             .catch((error) => {
@@ -337,23 +367,35 @@ export const createAuth = () => {
 };
 
 const createAuthConfig = () => {
-  const cache = redis();
+  const secondaryStorage =
+    env.NODE_ENV === 'production'
+      ? (() => {
+          const cache = redis();
+          return {
+            get: async (key: string) => {
+              const value = await cache.get(key);
+              return typeof value === 'string' ? value : value ? JSON.stringify(value) : null;
+            },
+            set: async (key: string, value: string, ttl?: number) => {
+              if (ttl) await cache.set(key, value, { ex: ttl });
+              else await cache.set(key, value);
+            },
+            delete: async (key: string) => {
+              await cache.del(key);
+            },
+          };
+        })()
+      : createLocalAuthSecondaryStorage();
+  if (env.NODE_ENV !== 'production' && !warnedAboutLocalAuthStorage) {
+    console.warn(
+      '[auth] Using in-memory session storage for local development; sessions reset when the dev worker restarts.',
+    );
+    warnedAboutLocalAuthStorage = true;
+  }
   const { db } = createDb(env.HYPERDRIVE.connectionString);
   return {
     database: drizzleAdapter(db, { provider: 'pg' }),
-    secondaryStorage: {
-      get: async (key: string) => {
-        const value = await cache.get(key);
-        return typeof value === 'string' ? value : value ? JSON.stringify(value) : null;
-      },
-      set: async (key: string, value: string, ttl?: number) => {
-        if (ttl) await cache.set(key, value, { ex: ttl });
-        else await cache.set(key, value);
-      },
-      delete: async (key: string) => {
-        await cache.del(key);
-      },
-    },
+    secondaryStorage,
     advanced: {
       ipAddress: {
         disableIpTracking: true,
@@ -387,7 +429,7 @@ const createAuthConfig = () => {
       accountLinking: {
         enabled: true,
         allowDifferentEmails: true,
-        trustedProviders: ['google', 'microsoft'],
+        trustedProviders: ['google'],
       },
     },
     onAPIError: {

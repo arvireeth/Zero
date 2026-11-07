@@ -1,7 +1,7 @@
 /**
- * OAuth 2.0 helpers for IMAP/SMTP XOAUTH2 connections (Microsoft 365 / Outlook.com and Gmail).
+ * OAuth 2.0 helpers for Gmail IMAP/SMTP XOAUTH2 connections.
  */
-export type ImapOAuthProvider = 'google' | 'microsoft';
+export type ImapOAuthProvider = 'google';
 
 export interface OAuthProviderConfig {
   authorizeUrl: string;
@@ -14,21 +14,6 @@ export interface OAuthProviderConfig {
 }
 
 export const OAUTH_PROVIDERS: Record<ImapOAuthProvider, OAuthProviderConfig> = {
-  microsoft: {
-    authorizeUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
-    tokenUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
-    scopes: [
-      'openid',
-      'email',
-      'profile',
-      'offline_access',
-      'https://outlook.office.com/IMAP.AccessAsUser.All',
-      'https://outlook.office.com/SMTP.Send',
-    ],
-    imap: { host: 'outlook.office365.com', port: 993, security: 'tls' },
-    smtp: { host: 'smtp.office365.com', port: 587, security: 'starttls' },
-    serverSavesSent: true,
-  },
   google: {
     authorizeUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
     tokenUrl: 'https://oauth2.googleapis.com/token',

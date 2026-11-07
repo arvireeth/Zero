@@ -1,8 +1,8 @@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { recoveryAuthClient, useSession } from '@/lib/auth-client';
-import { Google, Microsoft } from '@/components/icons/icons';
 import { Link, useSearchParams } from 'react-router';
 import { getConsentURL } from '@/lib/auth-recovery';
+import { Google } from '@/components/icons/icons';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 
@@ -14,8 +14,8 @@ export default function ReconnectPage() {
   const { data: session, isPending } = useSession();
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const validProvider = provider === 'google' || provider === 'microsoft';
-  const providerName = provider === 'google' ? 'Google' : 'Microsoft';
+  const validProvider = provider === 'google';
+  const providerName = 'Google';
 
   const reconnect = async () => {
     if (!validProvider || !loginHint || isRedirecting) return;
@@ -59,7 +59,7 @@ export default function ReconnectPage() {
             Your email connection is missing the permission needed to stay connected. Sign in to the
             same account and approve access again so we can securely refresh your connection.
           </p>
-          {email && <p className="text-sm font-medium break-all">{email}</p>}
+          {email && <p className="break-all text-sm font-medium">{email}</p>}
         </div>
         {!validProvider || !loginHint ? (
           <Alert className="border-orange-500/40 bg-orange-500/10 text-orange-300">
@@ -81,11 +81,7 @@ export default function ReconnectPage() {
               disabled={isPending || isRedirecting}
               onClick={() => void reconnect()}
             >
-              {provider === 'google' ? (
-                <Google className="mr-2 size-5" />
-              ) : (
-                <Microsoft className="mr-2 size-5" />
-              )}
+              <Google className="mr-2 size-5" />
               {isRedirecting ? 'Redirecting…' : `Reconnect with ${providerName}`}
             </Button>
             <p className="text-xs text-[#B7B7B7]">

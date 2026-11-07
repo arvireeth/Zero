@@ -677,7 +677,13 @@ const api = new Hono<HonoContext>()
       }
     }
 
-    const autumn = new Autumn({ secretKey: env.AUTUMN_SECRET_KEY });
+    // Billing is optional in the local free-first setup. Keep OAuth and public
+    // configuration routes usable without creating an Autumn account or API key.
+    const autumnSecretKey =
+      env.AUTUMN_SECRET_KEY ||
+      (env.NODE_ENV !== 'production' ? 'local-development-billing-disabled' : undefined);
+    if (!autumnSecretKey) throw new Error('Autumn billing is not configured');
+    const autumn = new Autumn({ secretKey: autumnSecretKey });
     c.set('autumn', autumn);
 
     await next();

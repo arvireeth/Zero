@@ -339,15 +339,30 @@ export class GoogleMailManager implements MailManager {
     return this.withErrorHandler(
       'getUserInfo',
       async () => {
-        const res = await people({ version: 'v1', auth: this.auth }).people.get({
-          resourceName: 'people/me',
-          personFields: 'names,photos,emailAddresses',
-        });
-        return {
-          address: res.data.emailAddresses?.[0]?.value ?? '',
-          name: res.data.names?.[0]?.displayName ?? '',
-          photo: res.data.photos?.[0]?.url ?? '',
-        };
+        try {
+          const res = await people({ version: 'v1', auth: this.auth }).people.get({
+            resourceName: 'people/me',
+            personFields: 'names,photos,emailAddresses',
+          });
+          return {
+            address: res.data.emailAddresses?.[0]?.value ?? '',
+            name: res.data.names?.[0]?.displayName ?? '',
+            photo: res.data.photos?.[0]?.url ?? '',
+          };
+        } catch (peopleError) {
+          // People API can be unavailable or disabled in a user's Cloud project.
+          // Gmail profile is already covered by this app's mail scopes and is enough
+          // to finish account connection; name and photo are optional here.
+          console.warn('[GoogleMailManager] People API profile lookup failed; using Gmail profile.');
+          try {
+            const profile = await this.gmail.users.getProfile({ userId: 'me' });
+            const address = profile.data.emailAddress ?? '';
+            if (address) return { address, name: '', photo: '' };
+          } catch {
+            // Let the standard error handler report the actual fallback failure.
+          }
+          throw peopleError;
+        }
       },
       {},
     );

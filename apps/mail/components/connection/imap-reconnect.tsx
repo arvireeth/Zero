@@ -42,15 +42,18 @@ export function ImapReconnectDialog({
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
           </div>
-        ) : data.authMethod === 'xoauth2' && data.oauthProvider ? (
+        ) : data.authMethod === 'xoauth2' && data.oauthProvider === 'google' ? (
           <a
             className="underline"
             href={`${import.meta.env.VITE_PUBLIC_BACKEND_URL}/api/imap-oauth/${data.oauthProvider}/start?email=${encodeURIComponent(data.email)}`}
           >
-            {m['pages.settings.connections.imap.signInWith']({
-              provider: data.oauthProvider === 'microsoft' ? 'Microsoft' : 'Google',
-            })}
+            {m['pages.settings.connections.imap.signInWith']({ provider: 'Google' })}
           </a>
+        ) : data.authMethod === 'xoauth2' && data.oauthProvider ? (
+          <p className="text-muted-foreground text-sm">
+            This mailbox used a provider connection that is no longer supported. Remove it and
+            connect a supported mailbox instead.
+          </p>
         ) : (
           <ImapConnectionForm
             initial={data}

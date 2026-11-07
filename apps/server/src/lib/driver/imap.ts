@@ -62,7 +62,7 @@ export interface ImapDriverDeps {
   socketFactory: SocketFactory;
   cipher: CredentialCipher;
   blobs: BlobCache;
-  oauthClients: Partial<Record<'google' | 'microsoft', OAuthClientCredentials>>;
+  oauthClients: Partial<Record<'google', OAuthClientCredentials>>;
   fetcher?: typeof fetch;
 }
 
@@ -133,9 +133,6 @@ const defaultDeps = async (): Promise<ImapDriverDeps> => {
     oauthClients: {
       google: env.GOOGLE_CLIENT_ID
         ? { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET }
-        : undefined,
-      microsoft: env.MICROSOFT_CLIENT_ID
-        ? { clientId: env.MICROSOFT_CLIENT_ID, clientSecret: env.MICROSOFT_CLIENT_SECRET }
         : undefined,
     },
   };
@@ -224,6 +221,8 @@ export class ImapMailManager implements MailManager {
       return this.oauth.accessToken;
     const provider = this.settings.oauthProvider;
     if (!provider) throw new OAuthRefreshError('XOAUTH2 connection has no OAuth provider', true);
+    if (provider !== 'google')
+      throw new OAuthRefreshError('This OAuth mailbox provider is no longer supported', true);
     const deps = await this.depsPromise;
     const client = deps.oauthClients[provider];
     if (!client) throw new OAuthRefreshError(`${provider} OAuth is not configured`, false);

@@ -1,6 +1,6 @@
 /**
- * OAuth (authorization code + PKCE) flow that connects a Microsoft 365 / Outlook.com or Gmail
- * mailbox over IMAP/SMTP with XOAUTH2. Mounted at /api/imap-oauth.
+ * OAuth (authorization code + PKCE) flow that connects a Gmail mailbox over IMAP/SMTP with
+ * XOAUTH2. Mounted at /api/imap-oauth.
  *
  *   GET /:provider/start     -> redirects to the provider's consent screen
  *   GET /:provider/callback  -> exchanges the code, verifies IMAP + SMTP, saves the connection
@@ -33,6 +33,32 @@ interface PendingState {
   loginHint?: string;
 }
 
+const localPendingStates = new Map<string, { pending: PendingState; expiresAt: number }>();
+
+const storePendingState = async (state: string, pending: PendingState) => {
+  if (env.NODE_ENV === 'local' || env.NODE_ENV === 'development') {
+    const now = Date.now();
+    for (const [key, value] of localPendingStates) {
+      if (value.expiresAt <= now) localPendingStates.delete(key);
+    }
+    localPendingStates.set(state, { pending, expiresAt: now + STATE_TTL_SECONDS * 1000 });
+    return;
+  }
+  await redis().set(`imap-oauth:${state}`, JSON.stringify(pending), { ex: STATE_TTL_SECONDS });
+};
+
+const consumePendingState = async (state: string): Promise<PendingState | null> => {
+  if (env.NODE_ENV === 'local' || env.NODE_ENV === 'development') {
+    const value = localPendingStates.get(state);
+    localPendingStates.delete(state);
+    return value && value.expiresAt > Date.now() ? value.pending : null;
+  }
+  const key = `imap-oauth:${state}`;
+  const stored = await redis().get<PendingState | string>(key);
+  await redis().del(key);
+  return typeof stored === 'string' ? (JSON.parse(stored) as PendingState) : stored;
+};
+
 const base64Url = (bytes: Uint8Array) =>
   btoa(String.fromCharCode(...bytes))
     .replace(/\+/g, '-')
@@ -47,9 +73,8 @@ const challengeFor = async (verifier: string) =>
   );
 
 const clientFor = (provider: ImapOAuthProvider) => {
-  const clientId = provider === 'microsoft' ? env.MICROSOFT_CLIENT_ID : env.GOOGLE_CLIENT_ID;
-  const clientSecret =
-    provider === 'microsoft' ? env.MICROSOFT_CLIENT_SECRET : env.GOOGLE_CLIENT_SECRET;
+  const clientId = env.GOOGLE_CLIENT_ID;
+  const clientSecret = env.GOOGLE_CLIENT_SECRET;
   return clientId && clientSecret ? { clientId, clientSecret } : null;
 };
 
@@ -74,7 +99,7 @@ export const imapOAuthApi = new Hono<HonoContext>()
     const verifier = randomToken();
     const loginHint = c.req.query('email') || undefined;
     const pending: PendingState = { userId: user.id, provider, verifier, loginHint };
-    await redis().set(`imap-oauth:${state}`, JSON.stringify(pending), { ex: STATE_TTL_SECONDS });
+    await storePendingState(state, pending);
     return c.redirect(
       authorizationUrl(provider, {
         clientId: client.clientId,
@@ -92,11 +117,7 @@ export const imapOAuthApi = new Hono<HonoContext>()
     if (error || !code || !state)
       return c.redirect(appRedirect({ imapError: error || 'cancelled' }));
 
-    const key = `imap-oauth:${state}`;
-    const stored = await redis().get<PendingState | string>(key);
-    await redis().del(key);
-    const pending: PendingState | null =
-      typeof stored === 'string' ? (JSON.parse(stored) as PendingState) : stored;
+    const pending = await consumePendingState(state);
     const user = c.var.sessionUser;
     if (!pending || pending.provider !== provider || !user || pending.userId !== user.id)
       return c.redirect(appRedirect({ imapError: 'invalid_state' }));
