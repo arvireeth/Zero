@@ -353,7 +353,9 @@ export class GoogleMailManager implements MailManager {
           // People API can be unavailable or disabled in a user's Cloud project.
           // Gmail profile is already covered by this app's mail scopes and is enough
           // to finish account connection; name and photo are optional here.
-          console.warn('[GoogleMailManager] People API profile lookup failed; using Gmail profile.');
+          console.warn(
+            '[GoogleMailManager] People API profile lookup failed; using Gmail profile.',
+          );
           try {
             const profile = await this.gmail.users.getProfile({ userId: 'me' });
             const address = profile.data.emailAddress ?? '';

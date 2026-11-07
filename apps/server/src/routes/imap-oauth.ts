@@ -72,7 +72,7 @@ const challengeFor = async (verifier: string) =>
     new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier))),
   );
 
-const clientFor = (provider: ImapOAuthProvider) => {
+const clientFor = () => {
   const clientId = env.GOOGLE_CLIENT_ID;
   const clientSecret = env.GOOGLE_CLIENT_SECRET;
   return clientId && clientSecret ? { clientId, clientSecret } : null;
@@ -92,7 +92,7 @@ export const imapOAuthApi = new Hono<HonoContext>()
     if (env.IMAP_ENABLED !== 'true' || !isProvider(provider)) return c.notFound();
     const user = c.var.sessionUser;
     if (!user) return c.json({ error: 'Unauthorized' }, 401);
-    const client = clientFor(provider);
+    const client = clientFor();
     if (!client) return c.redirect(appRedirect({ imapError: 'oauth_not_configured' }));
 
     const state = randomToken();
@@ -122,7 +122,7 @@ export const imapOAuthApi = new Hono<HonoContext>()
     if (!pending || pending.provider !== provider || !user || pending.userId !== user.id)
       return c.redirect(appRedirect({ imapError: 'invalid_state' }));
 
-    const client = clientFor(provider);
+    const client = clientFor();
     if (!client) return c.redirect(appRedirect({ imapError: 'oauth_not_configured' }));
     const cipher = new CredentialCipher(env.CREDENTIALS_ENCRYPTION_KEYS);
     if (!cipher.configured)
